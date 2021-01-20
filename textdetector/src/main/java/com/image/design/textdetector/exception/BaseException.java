@@ -1,6 +1,6 @@
 package com.image.design.textdetector.exception;
 
-public class BaseException extends RuntimeException  {
+public class BaseException extends RuntimeException {
 
     private String message;
 

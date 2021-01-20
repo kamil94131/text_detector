@@ -1,7 +1,6 @@
 package com.image.design.textdetector.configuration;
 
-import com.image.design.textdetector.exception.ImageConvertionException;
-import com.image.design.textdetector.exception.TesseractDetectionException;
+import com.image.design.textdetector.exception.BaseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -11,8 +10,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class TextDetectorExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(value = { TesseractDetectionException.class, ImageConvertionException.class })
-    public ResponseEntity<String> handle(final TesseractDetectionException ex) {
+    @ExceptionHandler(value = { BaseException.class })
+    public ResponseEntity<String> handle(final BaseException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 }

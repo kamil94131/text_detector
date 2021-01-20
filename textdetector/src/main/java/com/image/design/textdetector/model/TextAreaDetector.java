@@ -1,7 +1,7 @@
 package com.image.design.textdetector.model;
 
-import lombok.AllArgsConstructor;
-import nu.pattern.OpenCV;
+import com.image.design.textdetector.configuration.MessageResource;
+import com.image.design.textdetector.exception.BaseException;
 import org.opencv.core.*;
 import org.opencv.dnn.Dnn;
 import org.opencv.dnn.Net;
@@ -9,85 +9,88 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Component
-@AllArgsConstructor
 public class TextAreaDetector {
 
-    @Qualifier("frozenEastNN")
-    private final ClassPathResource frozenEastNNResource;
+    @Value("${thresh.score}")
+    private float score;
 
-    public List<byte[]> detect(byte[] data) throws IOException {
-        float scoreThresh = 0.7f;
-        float nmsThresh = 0.4f;
+    @Value("${thresh.nms}")
+    private float nms;
 
-        Net net = Dnn.readNetFromTensorflow(this.frozenEastNNResource.getPath());
-        Mat frame = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.IMREAD_UNCHANGED);
+    private final Resource frozenEastNNResource;
+    private final MessageResource messageResource;
+
+    public TextAreaDetector(@Qualifier("frozenEastNeuralNetwork") final Resource frozenEastNNResource, final MessageResource messageResource) {
+        this.frozenEastNNResource = frozenEastNNResource;
+        this.messageResource = messageResource;
+    }
+
+    public byte[] detect(byte[] data) {
+        final String frozenEastNNPath = getFrozenEastNeuralNetworkPath();
+        final Net net = Dnn.readNetFromTensorflow(frozenEastNNPath);
+        final Mat frame = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.IMREAD_UNCHANGED);
+
         Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB);
 
-        Size siz = new Size(320, 320);
-        int W = (int)(siz.width / 4); // width of the output geometry  / score maps
-        int H = (int)(siz.height / 4); // height of those. the geometry has 4, vertically stacked maps, the score one 1
-        Mat blob = Dnn.blobFromImage(frame, 1.0,siz, new Scalar(500.68, 500.78, 300.94), true, false);
+        final Size size = new Size(320, 320);
+        final List<Mat> outs = new ArrayList<>(2);
+
+        int H = (int)(size.height / 4); // height of those. the geometry has 4, vertically stacked maps, the score one 1
+        Mat blob = Dnn.blobFromImage(frame, 1.0,size, new Scalar(500.68, 500.78, 300.94), true, false);
         net.setInput(blob);
-        List<Mat> outs = new ArrayList<>(2);
-        List<String> outNames = new ArrayList<String>();
-        outNames.add("feature_fusion/Conv_7/Sigmoid");
-        outNames.add("feature_fusion/concat_3");
-        net.forward(outs, outNames);
+        net.forward(outs, getOutputNNLayerNames());
 
         // Decode predicted bounding boxes.
         Mat scores = outs.get(0).reshape(1, H);
         // My lord and savior : http://answers.opencv.org/question/175676/javaandroid-access-4-dim-mat-planes/
         Mat geometry = outs.get(1).reshape(1, 5 * H); // don't hardcode it !
         List<Float> confidencesList = new ArrayList<>();
-        List<RotatedRect> boxesList = decode(scores, geometry, confidencesList, scoreThresh);
+        List<RotatedRect> boxesList = decode(scores, geometry, confidencesList, score);
+
+        if(confidencesList.isEmpty()) {
+            return new byte[0];
+        }
 
         // Apply non-maximum suppression procedure.
         MatOfFloat confidences = new MatOfFloat(Converters.vector_float_to_Mat(confidencesList));
         RotatedRect[] boxesArray = boxesList.toArray(new RotatedRect[0]);
         MatOfRotatedRect boxes = new MatOfRotatedRect(boxesArray);
         MatOfInt indices = new MatOfInt();
-        Dnn.NMSBoxesRotated(boxes, confidences, scoreThresh, nmsThresh, indices);
+        Dnn.NMSBoxesRotated(boxes, confidences, score, nms, indices);
 
-        // Render detections
-        Point ratio = new Point((float)frame.cols()/siz.width, (float)frame.rows()/siz.height);
-        int[] indexes = indices.toArray();
-        final List<byte[]> detectedNumbers = new ArrayList<>();
-        for(int i = 0; i<indexes.length;++i) {
-            RotatedRect rot = boxesArray[indexes[i]];
-            Point[] vertices = new Point[4];
-            rot.points(vertices);
-            for (int j = 0; j < 4; ++j) {
-                vertices[j].x *= ratio.x;
-                vertices[j].y *= ratio.y;
-            }
-//            for (int j = 0; j < 4; ++j) {
-//                Imgproc.line(frame, vertices[j], vertices[(j + 1) % 4], new Scalar(0, 0,255), 3);
-//            }
+        final Point[] detectedRightBottomPoints = getDetectedRightBottomPoints(frame, size, boxesArray, indices);
 
-//            Imgcodecs.imwrite("out.png", frame);
-            final Mat mat = frame.submat(new Rect((int)vertices[1].x, (int)vertices[1].y, (int)(vertices[2].x - vertices[1].x), (int)(vertices[0].y - vertices[1].y)));
-//            Imgcodecs.imwrite("output" + i + ".png", frame.submat(new Rect((int)vertices[1].x, (int)vertices[1].y, (int)(vertices[2].x - vertices[1].x), (int)(vertices[0].y - vertices[1].y))));
-            final MatOfByte matByte = new MatOfByte();
-            Imgcodecs.imencode(".jpg", mat, matByte);
-            detectedNumbers.add(matByte.toArray());
+        if(Objects.isNull(detectedRightBottomPoints)) {
+            return new byte[0];
         }
-        return detectedNumbers;
+
+        final Mat mat = frame.submat(new Rect(
+                (int)detectedRightBottomPoints[1].x,
+                (int)detectedRightBottomPoints[1].y,
+                (int)(detectedRightBottomPoints[2].x - detectedRightBottomPoints[1].x),
+                (int)(detectedRightBottomPoints[0].y - detectedRightBottomPoints[1].y)));
+
+        final MatOfByte matByte = new MatOfByte();
+        Imgcodecs.imencode(".jpg", mat, matByte);
+
+        return matByte.toArray();
     }
 
     private static List<RotatedRect> decode(Mat scores, Mat geometry, List<Float> confidences, float scoreThresh) {
         // size of 1 geometry plane
         int W = geometry.cols();
         int H = geometry.rows() / 5;
-        //System.out.println(geometry);
-        //System.out.println(scores);
 
         List<RotatedRect> detections = new ArrayList<>();
         for (int y = 0; y < H; ++y) {
@@ -122,5 +125,53 @@ public class TextAreaDetector {
             }
         }
         return detections;
+    }
+
+    private Point[] getDetectedRightBottomPoints(final Mat frame, final Size size, final RotatedRect[] boxesArray, final MatOfInt indices) {
+        final Point ratio = new Point((float)frame.cols() / size.width, (float)frame.rows() / size.height);
+        int[] indexes = indices.toArray();
+
+        Point[] rightBottomDetectionPoints = null;
+
+        for (int index : indexes) {
+            final RotatedRect rot = boxesArray[index];
+            final Point[] vertices = new Point[4];
+
+            rot.points(vertices);
+
+            for (int j = 0; j < 4; ++j) {
+                vertices[j].x *= ratio.x;
+                vertices[j].y *= ratio.y;
+            }
+
+            if (Objects.isNull(rightBottomDetectionPoints) || calculateVectorValue(vertices) > calculateVectorValue(rightBottomDetectionPoints)) {
+                rightBottomDetectionPoints = vertices;
+            }
+        }
+        return rightBottomDetectionPoints;
+    }
+
+    private double calculateVectorValue(final Point[] vertices) {
+        // calculate vector length between left top (0,0) and max detected border on right bottom
+        // => max vector value mean that we detected paper with code on right bottom
+        // we are looking for max bcs algorithm can detect more number on image,
+        // and we know that paper will be on right bottom
+        return Math.sqrt(Math.pow(vertices[0].x, 2) + Math.pow(vertices[0].y, 2));
+    }
+
+    private List<String> getOutputNNLayerNames() {
+        return List.of("feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3");
+    }
+
+    private String getFrozenEastNeuralNetworkPath() {
+        try {
+            final File frozenEastNNFile = this.frozenEastNNResource.getFile();
+            if(!frozenEastNNFile.exists()) {
+                throw new BaseException(this.messageResource.get("imagedesign.error.frozeneastnn.load"));
+            }
+            return frozenEastNNFile.getPath();
+        } catch (IOException e) {
+            throw new BaseException(this.messageResource.get("imagedesign.error.frozeneastnn.load"));
+        }
     }
 }

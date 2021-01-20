@@ -7,7 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
@@ -23,9 +24,9 @@ public class AppConfiguration {
     private String tesseractDefaultLanguage;
 
     @Bean
-    @Qualifier("frozenEastNN")
-    public ClassPathResource frozeEastNN() {
-        return new ClassPathResource("target/classes/opencv/frozen_east_text_detection.pb");
+    @Qualifier("frozenEastNeuralNetwork")
+    public Resource frozeEastNN(final ResourceLoader resourceLoader) {
+        return resourceLoader.getResource("classpath:opencv/frozen_east_text_detection.pb");
     }
 
     @Bean
