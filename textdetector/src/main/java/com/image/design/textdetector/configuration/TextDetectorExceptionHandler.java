@@ -12,6 +12,6 @@ public class TextDetectorExceptionHandler extends ResponseEntityExceptionHandler
 
     @ExceptionHandler(value = { BaseException.class })
     public ResponseEntity<String> handle(final BaseException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }
