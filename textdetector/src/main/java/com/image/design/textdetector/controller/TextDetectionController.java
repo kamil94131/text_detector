@@ -2,8 +2,8 @@ package com.image.design.textdetector.controller;
 
 import com.image.design.textdetector.model.TextAreaDetector;
 import com.image.design.textdetector.model.TextDetector;
+import com.image.design.textdetector.service.FileHandlerService;
 import com.image.design.textdetector.service.FileStoreService;
-import com.image.design.textdetector.service.InputConversionService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,15 +21,15 @@ public class TextDetectionController {
 
     private final TextDetector textDetector;
     private final TextAreaDetector textAreaDetector;
-    private final InputConversionService inputConversionService;
+    private final FileHandlerService fileHandlerService;
     private final FileStoreService fileStoreService;
 
     @PostMapping("/detect")
-    public String detectText(@RequestParam("files") MultipartFile[] multipartFiles) {
+    public String detectText(@RequestParam("files") MultipartFile[] multipartFiles){
         final List<String> codes = new ArrayList<>();
 
         for(final MultipartFile multipartFile : multipartFiles) {
-            final byte[] inputFileBytes = this.inputConversionService.getMultipartFileBytes(multipartFile);
+            final byte[] inputFileBytes = this.fileHandlerService.getImageWithProperOrientation(multipartFile);
             final byte[] detectedCodeImage = this.textAreaDetector.detect(inputFileBytes);
             final String detectedCode = this.textDetector.detect(detectedCodeImage);
             codes.add(detectedCode);

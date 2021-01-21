@@ -2,7 +2,7 @@ package com.image.design.textdetector.model;
 
 import com.image.design.textdetector.configuration.MessageResource;
 import com.image.design.textdetector.exception.BaseException;
-import com.image.design.textdetector.service.InputConversionService;
+import com.image.design.textdetector.service.FileHandlerService;
 import lombok.AllArgsConstructor;
 import net.sourceforge.tess4j.Tesseract;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ public class TextDetector {
 
     private final Tesseract tesseract;
     private final MessageResource messageResource;
-    private final InputConversionService conversionService;
+    private final FileHandlerService conversionService;
 
     public String detect(byte[] data) {
         if(Optional.ofNullable(data).isEmpty() || data.length == 0) {

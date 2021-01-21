@@ -38,21 +38,21 @@ public class AppConfiguration {
 
     @Bean
     public LocaleResolver localeResolver() {
-        SessionLocaleResolver sessionLocaleResolver = new SessionLocaleResolver();
+        final SessionLocaleResolver sessionLocaleResolver = new SessionLocaleResolver();
         sessionLocaleResolver.setDefaultLocale(LocaleContextHolder.getLocale());
         return sessionLocaleResolver;
     }
 
     @Bean
     public LocaleChangeInterceptor localeChangeInterceptor() {
-        LocaleChangeInterceptor localeChangeInterceptor = new LocaleChangeInterceptor();
+        final LocaleChangeInterceptor localeChangeInterceptor = new LocaleChangeInterceptor();
         localeChangeInterceptor.setParamName(LANG_PARAM);
         return localeChangeInterceptor;
     }
 
     @Bean
     public ReloadableResourceBundleMessageSource messageSource() {
-        ReloadableResourceBundleMessageSource bundleMessageSource = new ReloadableResourceBundleMessageSource();
+        final ReloadableResourceBundleMessageSource bundleMessageSource = new ReloadableResourceBundleMessageSource();
         bundleMessageSource.setBasename(MASSAGES_CLASSPATH);
         bundleMessageSource.setDefaultEncoding(ENCODING);
         return bundleMessageSource;

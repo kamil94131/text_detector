@@ -48,13 +48,13 @@ public class FileStoreService {
     private Path generatePath(final String fileName, final String extension) {
         final Path path = this.getPath(fileName, extension);
 
-        if(!this.fileExistsInStore(path)) {
+        if(!this.fileExists(path)) {
             return path;
         }
 
         return LongStream.iterate(1, index -> index += 1).limit(Long.MAX_VALUE)
                 .mapToObj(index -> this.generateNextFileName(fileName, extension, index))
-                .filter(filePath -> !this.fileExistsInStore(filePath))
+                .filter(filePath -> !this.fileExists(filePath))
                 .findAny()
                 .orElseThrow(() -> new BaseException(this.messageResource.get("imagedesign.error.file.uniquename")));
     }
@@ -79,7 +79,7 @@ public class FileStoreService {
         }
     }
 
-    private boolean fileExistsInStore(final Path path) {
+    private boolean fileExists(final Path path) {
         if(Objects.isNull(path)) {
             return false;
         }

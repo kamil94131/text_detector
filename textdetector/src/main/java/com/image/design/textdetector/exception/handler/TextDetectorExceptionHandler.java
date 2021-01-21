@@ -1,4 +1,4 @@
-package com.image.design.textdetector.configuration;
+package com.image.design.textdetector.exception.handler;
 
 import com.image.design.textdetector.exception.BaseException;
 import org.springframework.http.HttpStatus;
