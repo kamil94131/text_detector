@@ -13,6 +13,8 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
+import java.io.IOException;
+
 @Configuration
 public class AppConfiguration {
 
@@ -30,9 +32,10 @@ public class AppConfiguration {
     }
 
     @Bean
-    public Tesseract tesseract() {
+    public Tesseract tesseract(final ResourceLoader resourceLoader) throws IOException {
         final Tesseract tesseract = new Tesseract();
         tesseract.setLanguage(this.tesseractDefaultLanguage);
+        tesseract.setDatapath(resourceLoader.getResource("classpath:tesseract\\").getFile().getPath());
         return tesseract;
     }
 
