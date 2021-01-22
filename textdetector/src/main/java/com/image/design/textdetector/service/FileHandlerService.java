@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -82,6 +83,11 @@ public class FileHandlerService {
         try {
             final Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
             final ExifIFD0Directory exifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+
+            if(Objects.isNull(exifIFD0Directory)) {
+                return ImageRotation.DEGREE_0;
+            }
+
             return ImageRotation.getByRotation(exifIFD0Directory.getInt(ExifIFD0Directory.TAG_ORIENTATION));
         } catch (ImageProcessingException | IOException | MetadataException e) {
             return ImageRotation.DEGREE_NOT_DETECTED;
