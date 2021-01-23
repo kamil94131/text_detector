@@ -28,7 +28,7 @@ public class AppConfiguration {
     @Bean
     @Qualifier("frozenEastNeuralNetwork")
     public Resource frozeEastNN(final ResourceLoader resourceLoader) {
-        return resourceLoader.getResource("classpath:opencv/frozen_east_text_detection.pb");
+        return resourceLoader.getResource("classpath:opencv\\frozen_east_text_detection.pb");
     }
 
     @Bean

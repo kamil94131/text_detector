@@ -11,11 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.logging.Logger;
+
 @RestController
 @RequestMapping("download")
 @AllArgsConstructor
 public class FileStoreController {
 
+    private static final Logger LOGGER = Logger.getLogger(FileStoreController.class.getName());
     private final FileStoreService fileStoreService;
 
     @GetMapping("image/{fileName}")

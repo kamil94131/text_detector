@@ -7,8 +7,10 @@ import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.image.design.textdetector.configuration.MessageResource;
 import com.image.design.textdetector.exception.BaseException;
+import com.image.design.textdetector.model.FileExtension;
 import com.image.design.textdetector.model.ImageRotation;
 import lombok.AllArgsConstructor;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,12 +23,34 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 @Service
 @AllArgsConstructor
 public class FileHandlerService {
 
+    private static final Logger LOGGER = Logger.getLogger(FileHandlerService.class.getName());
     private final MessageResource messageResource;
+
+    public FileExtension getFileExtension(final MultipartFile multipartFile) {
+        final String extension = this.getExtension(multipartFile);
+
+        if(extension.isBlank()) {
+            return FileExtension.NOT_ALLOWED;
+        }
+
+        return FileExtension.getExtension(extension);
+    }
+
+    public String getExtension(final MultipartFile multipartFile) {
+        try {
+            final String originalFileName = multipartFile.getOriginalFilename();
+            return FilenameUtils.getExtension(originalFileName);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning(String.format("Couldn't get extension from file name: %s, ex %s", multipartFile.getOriginalFilename(), e.toString()));
+            return "";
+        }
+    }
 
     public byte[] getMultipartFileBytes(final MultipartFile file) {
         try {
@@ -45,7 +69,7 @@ public class FileHandlerService {
         }
     }
 
-    public byte[] getImageWithProperOrientation(final MultipartFile multipartFile) {
+    public byte[] getImageWithProperOrientation(final MultipartFile multipartFile, final FileExtension fileExtension) {
         try {
             final byte[] data = this.getMultipartFileBytes(multipartFile);
             final BufferedImage image = this.convertBytesToImage(data);
@@ -71,7 +95,7 @@ public class FileHandlerService {
             rotateOp.filter(image, rotatedImage);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(rotatedImage, "jpg", baos);
+            ImageIO.write(rotatedImage, fileExtension.name().toLowerCase(), baos);
 
             return baos.toByteArray();
         } catch (IOException e) {

@@ -1,5 +1,6 @@
 package com.image.design.textdetector.controller;
 
+import com.image.design.textdetector.model.FileExtension;
 import com.image.design.textdetector.model.TextAreaDetector;
 import com.image.design.textdetector.model.TextDetector;
 import com.image.design.textdetector.service.FileHandlerService;
@@ -29,12 +30,18 @@ public class TextDetectionController {
         final List<String> codes = new ArrayList<>();
 
         for(final MultipartFile multipartFile : multipartFiles) {
-            final byte[] inputFileBytes = this.fileHandlerService.getImageWithProperOrientation(multipartFile);
+            final FileExtension fileExtension = this.fileHandlerService.getFileExtension(multipartFile);
+
+            if(fileExtension == FileExtension.NOT_ALLOWED) {
+                continue;
+            }
+
+            final byte[] inputFileBytes = this.fileHandlerService.getImageWithProperOrientation(multipartFile, fileExtension);
             final byte[] detectedCodeImage = this.textAreaDetector.detect(inputFileBytes);
             final String detectedCode = this.textDetector.detect(detectedCodeImage);
             codes.add(detectedCode);
 
-            this.fileStoreService.storeFile(multipartFile, detectedCode);
+            this.fileStoreService.storeFile(multipartFile, detectedCode, fileExtension);
         }
 
         return String.join(",", codes);

@@ -17,4 +17,11 @@ public class BaseException extends RuntimeException {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    @Override
+    public String toString() {
+        return "BaseException{" +
+                "message='" + message + '\'' +
+                '}';
+    }
 }
