@@ -38,12 +38,14 @@ public class FileStoreService {
         }
     }
 
-    public void storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
+    public Path storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
         try {
             final String name = fileName.replace(' ', '_').trim();
             final Path path = this.generatePath(name, fileExtension.name().toLowerCase());
 
             Files.copy(multipartFile.getInputStream(), path);
+
+            return path;
         } catch (IOException e) {
             throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.save"));
         }
