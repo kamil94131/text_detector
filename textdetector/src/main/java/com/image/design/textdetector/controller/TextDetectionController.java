@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class TextDetectionController {
     private final FilePathService filePathService;
 
     @PostMapping("/detect")
-    public String detectText(@RequestParam("files") MultipartFile[] multipartFiles){
+    public String detectText(@RequestParam("files") final MultipartFile[] multipartFiles, final HttpServletRequest request){
         final List<Path> paths = new ArrayList<>();
 
         for(final MultipartFile multipartFile : multipartFiles) {
@@ -41,7 +42,7 @@ public class TextDetectionController {
             }
 
             final byte[] inputFileBytes = this.fileHandlerService.getImageWithProperOrientation(multipartFile, fileExtension);
-            final byte[] detectedCodeImage = this.textAreaDetector.detect(inputFileBytes);
+            final byte[] detectedCodeImage = this.textAreaDetector.detect(inputFileBytes, fileExtension);
             final String detectedCode = this.textDetector.detect(detectedCodeImage);
 
             paths.add(this.fileStoreService.storeFile(multipartFile, detectedCode, fileExtension));
@@ -50,7 +51,8 @@ public class TextDetectionController {
         return paths.stream()
                 .map(path -> {
                     final String serverPath = path.toString();
-                    return this.filePathService.getFileContextPath(serverPath.substring(serverPath.lastIndexOf("\\") + 1));
+                    final String fileName = serverPath.substring(serverPath.lastIndexOf("\\") + 1);
+                    return this.filePathService.getFileContextPath(request, fileName);
                 })
                 .collect(Collectors.joining("\n"));
     }

@@ -18,11 +18,14 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.LongStream;
 
 @Service
 public class FileStoreService {
 
+    private static final String DETECTED_CODE_PATTERN = "^[a-zA-Z0-9_]+$";
     private static final Logger LOGGER = Logger.getLogger(FileStoreService.class.getName());
     private final MessageResource messageResource;
     private final FileStorageProperty fileStorageProperty;
@@ -41,12 +44,22 @@ public class FileStoreService {
     public Path storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
         try {
             final String name = fileName.replace(' ', '_').trim();
+
+            final Pattern pattern = Pattern.compile(DETECTED_CODE_PATTERN);
+            final Matcher matcher = pattern.matcher(name);
+
+            if(!matcher.matches()) {
+                LOGGER.warning(String.format(String.format("Detected wrong code format: %s", name)));
+                throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.save"));
+            }
+
             final Path path = this.generatePath(name, fileExtension.name().toLowerCase());
 
             Files.copy(multipartFile.getInputStream(), path);
 
             return path;
         } catch (IOException e) {
+            LOGGER.warning(String.format("Couldn't get file as resource, ex: %s", e.toString()));
             throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.save"));
         }
     }
@@ -71,6 +84,10 @@ public class FileStoreService {
 
     public Resource getFile(final String fileName) {
         final Path path = this.getPath(fileName);
+
+        if(Objects.isNull(path)) {
+            throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"));
+        }
 
         try {
             final Resource resource = new UrlResource(path.toUri());

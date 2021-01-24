@@ -1,6 +1,8 @@
 package com.image.design.textdetector.configuration;
 
 import net.sourceforge.tess4j.Tesseract;
+import org.opencv.dnn.Dnn;
+import org.opencv.dnn.Net;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,11 +15,14 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 @Configuration
 public class AppConfiguration {
 
+    private static final Logger LOGGER = Logger.getLogger(AppConfiguration.class.getName());
     private static final String LANG_PARAM = "lang";
     private static final String MASSAGES_CLASSPATH = "classpath:i18n/messages";
     private static final String ENCODING = "UTF-8";
@@ -27,8 +32,24 @@ public class AppConfiguration {
 
     @Bean
     @Qualifier("frozenEastNeuralNetwork")
-    public Resource frozeEastNN(final ResourceLoader resourceLoader) {
-        return resourceLoader.getResource("classpath:opencv\\frozen_east_text_detection.pb");
+    public Net frozeEastNN(final ResourceLoader resourceLoader) {
+        final Resource neuralNetworkResource = resourceLoader.getResource("classpath:opencv\\frozen_east_text_detection.pb");
+        final String neuralNetworkPath = getFrozenEastNeuralNetworkPath(neuralNetworkResource);
+        return Dnn.readNetFromTensorflow(neuralNetworkPath);
+    }
+
+    private String getFrozenEastNeuralNetworkPath(final Resource neuralNetworkResource) {
+        try {
+            final File frozenEastNNFile = neuralNetworkResource.getFile();
+            if(!frozenEastNNFile.exists()) {
+                LOGGER.warning("Couldn't find frozen east file in resources");
+                return null;
+            }
+            return frozenEastNNFile.getPath();
+        } catch (IOException e) {
+            LOGGER.warning(String.format("Couldn't find frozen east file in resources, ex: %s", e.toString()));
+            return null;
+        }
     }
 
     @Bean

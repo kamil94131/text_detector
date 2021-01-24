@@ -1,7 +1,5 @@
 package com.image.design.textdetector.model;
 
-import com.image.design.textdetector.configuration.MessageResource;
-import com.image.design.textdetector.exception.BaseException;
 import org.opencv.core.*;
 import org.opencv.dnn.Dnn;
 import org.opencv.dnn.Net;
@@ -10,11 +8,8 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,17 +23,14 @@ public class TextAreaDetector {
     @Value("${thresh.nms}")
     private float nms;
 
-    private final Resource frozenEastNNResource;
-    private final MessageResource messageResource;
+    private final Net frozenEastNeuralNetwork;
 
-    public TextAreaDetector(@Qualifier("frozenEastNeuralNetwork") final Resource frozenEastNNResource, final MessageResource messageResource) {
-        this.frozenEastNNResource = frozenEastNNResource;
-        this.messageResource = messageResource;
+    public TextAreaDetector(@Qualifier("frozenEastNeuralNetwork") final Net frozenEastNeuralNetwork) {
+        this.frozenEastNeuralNetwork = frozenEastNeuralNetwork;
     }
 
-    public byte[] detect(byte[] data) {
-        final String frozenEastNNPath = getFrozenEastNeuralNetworkPath();
-        final Net net = Dnn.readNetFromTensorflow(frozenEastNNPath);
+    public byte[] detect(byte[] data, final FileExtension fileExtension) {
+        final Net net = this.frozenEastNeuralNetwork;
         final Mat frame = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.IMREAD_UNCHANGED);
 
         Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB);
@@ -46,15 +38,13 @@ public class TextAreaDetector {
         final Size size = new Size(320, 320);
         final List<Mat> outs = new ArrayList<>(2);
 
-        int H = (int)(size.height / 4); // height of those. the geometry has 4, vertically stacked maps, the score one 1
+        int H = (int)(size.height / 4);
         Mat blob = Dnn.blobFromImage(frame, 1.0,size, new Scalar(500.68, 500.78, 300.94), true, false);
         net.setInput(blob);
         net.forward(outs, getOutputNNLayerNames());
 
-        // Decode predicted bounding boxes.
         Mat scores = outs.get(0).reshape(1, H);
-        // My lord and savior : http://answers.opencv.org/question/175676/javaandroid-access-4-dim-mat-planes/
-        Mat geometry = outs.get(1).reshape(1, 5 * H); // don't hardcode it !
+        Mat geometry = outs.get(1).reshape(1, 5 * H);
         List<Float> confidencesList = new ArrayList<>();
         List<RotatedRect> boxesList = decode(scores, geometry, confidencesList, score);
 
@@ -62,7 +52,6 @@ public class TextAreaDetector {
             return new byte[0];
         }
 
-        // Apply non-maximum suppression procedure.
         MatOfFloat confidences = new MatOfFloat(Converters.vector_float_to_Mat(confidencesList));
         RotatedRect[] boxesArray = boxesList.toArray(new RotatedRect[0]);
         MatOfRotatedRect boxes = new MatOfRotatedRect(boxesArray);
@@ -82,13 +71,13 @@ public class TextAreaDetector {
                 (int)(detectedRightBottomPoints[0].y - detectedRightBottomPoints[1].y)));
 
         final MatOfByte matByte = new MatOfByte();
-        Imgcodecs.imencode(".jpg", mat, matByte);
+        final String extension = String.format(".%s", fileExtension.name().toLowerCase());
+        Imgcodecs.imencode(extension, mat, matByte);
 
         return matByte.toArray();
     }
 
     private static List<RotatedRect> decode(Mat scores, Mat geometry, List<Float> confidences, float scoreThresh) {
-        // size of 1 geometry plane
         int W = geometry.cols();
         int H = geometry.rows() / 5;
 
@@ -163,15 +152,5 @@ public class TextAreaDetector {
         return List.of("feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3");
     }
 
-    private String getFrozenEastNeuralNetworkPath() {
-        try {
-            final File frozenEastNNFile = this.frozenEastNNResource.getFile();
-            if(!frozenEastNNFile.exists()) {
-                throw new BaseException(this.messageResource.get("imagedesign.error.frozeneastnn.load"));
-            }
-            return frozenEastNNFile.getPath();
-        } catch (IOException e) {
-            throw new BaseException(this.messageResource.get("imagedesign.error.frozeneastnn.load"));
-        }
-    }
+
 }
