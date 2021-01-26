@@ -6,6 +6,7 @@ import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.logging.Logger;
 
 @Component
@@ -16,10 +17,18 @@ public class MessageResource {
     private final MessageSource messageSource;
 
     public String get(final String resource, final String... params) {
+        return this.get(resource, LocaleContextHolder.getLocale(), params);
+    }
+
+    public String getForSystem(final String resource, final String... params) {
+        return this.get(resource, Locale.US, params);
+    }
+
+    public String get(final String resource, final Locale locale, final String... params) {
         try{
-            return messageSource.getMessage(resource, params, LocaleContextHolder.getLocale());
+            return this.messageSource.getMessage(resource, params, locale);
         } catch (NoSuchMessageException e) {
-            LOGGER.warning(String.format("Resource key not defined in resource file, ex: %s", e.toString()));
+            LOGGER.warning(this.messageSource.getMessage("system.error.resource.notfound", new Object[] {e.toString() }, Locale.US));
             return "";
         }
     }

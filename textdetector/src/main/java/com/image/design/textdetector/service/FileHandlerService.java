@@ -6,9 +6,8 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.image.design.textdetector.configuration.MessageResource;
-import com.image.design.textdetector.exception.BaseException;
-import com.image.design.textdetector.model.FileExtension;
-import com.image.design.textdetector.model.ImageRotation;
+import com.image.design.textdetector.model.file.FileExtension;
+import com.image.design.textdetector.model.file.ImageRotation;
 import lombok.AllArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
@@ -47,25 +46,8 @@ public class FileHandlerService {
             final String originalFileName = multipartFile.getOriginalFilename();
             return FilenameUtils.getExtension(originalFileName);
         } catch (IllegalArgumentException e) {
-            LOGGER.warning(String.format("Couldn't get extension from file name: %s, ex %s", multipartFile.getOriginalFilename(), e.toString()));
+            LOGGER.warning(this.messageResource.getForSystem("system.error.file.extension", multipartFile.getOriginalFilename(), e.toString()));
             return "";
-        }
-    }
-
-    public byte[] getMultipartFileBytes(final MultipartFile file) {
-        try {
-            return file.getBytes();
-        } catch (IOException e) {
-            throw new BaseException(this.messageResource.get("imagedesign.error.inputfile.read"));
-        }
-    }
-
-    public BufferedImage convertBytesToImage(byte[] data) {
-        try {
-            final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
-            return ImageIO.read(inputStream);
-        } catch (IOException e) {
-            throw new BaseException(this.messageResource.get("imagedesign.error.image.conversion"));
         }
     }
 
@@ -73,6 +55,11 @@ public class FileHandlerService {
         try {
             final byte[] data = this.getMultipartFileBytes(multipartFile);
             final BufferedImage image = this.convertBytesToImage(data);
+
+            if(Objects.isNull(image)) {
+                return new byte[0];
+            }
+
             final ImageRotation imageRotation = this.getImageRotation(multipartFile.getInputStream());
 
             if(imageRotation == ImageRotation.DEGREE_NOT_DETECTED || imageRotation == ImageRotation.DEGREE_0) {
@@ -103,7 +90,38 @@ public class FileHandlerService {
         }
     }
 
+    public byte[] getMultipartFileBytes(final MultipartFile file) {
+        if(Objects.isNull(file)) {
+            return new byte[0];
+        }
+
+        try {
+            return file.getBytes();
+        } catch (IOException e) {
+            LOGGER.warning(this.messageResource.getForSystem("system.error.inputfile.read", e.toString()));
+            return new byte[0];
+        }
+    }
+
+    public BufferedImage convertBytesToImage(byte[] data) {
+        if(Objects.isNull(data) || data.length == 0) {
+            return null;
+        }
+
+        try {
+            final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
+            return ImageIO.read(inputStream);
+        } catch (IOException e) {
+            LOGGER.warning(this.messageResource.getForSystem("system.error.image.conversion", e.toString()));
+            return null;
+        }
+    }
+
     public ImageRotation getImageRotation(final InputStream inputStream) {
+        if(Objects.isNull(inputStream)) {
+            return ImageRotation.DEGREE_NOT_DETECTED;
+        }
+
         try {
             final Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
             final ExifIFD0Directory exifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
