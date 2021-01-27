@@ -6,6 +6,7 @@ import com.image.design.textdetector.model.response.ResponseType;
 import com.image.design.textdetector.service.DetectionProcessService;
 import com.image.design.textdetector.service.ProtocolService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +25,7 @@ public class TextDetectionController {
     private final ProtocolService protocolService;
     private final MessageResource messageResource;
 
-    @PostMapping("detect")
+    @PostMapping(value = "detect", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProtocolResponseResult> detectText(@RequestParam("files") final MultipartFile[] multipartFiles){
         for(final MultipartFile multipartFile : multipartFiles) {
             this.detectionProcessService.process(multipartFile);

@@ -8,11 +8,13 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.Serializable;
+
 @Component
 @Getter
 @Setter
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
-public class ProcessingProtocol {
+public class ProcessingProtocol implements Serializable {
 
     private ProtocolResponseResult protocolResponseResult = new ProtocolResponseResult();
 }

@@ -5,13 +5,14 @@ import com.image.design.textdetector.model.protocol.FileProcessingProtocol;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Getter
 @Setter
-public class ProtocolResponseResult {
+public class ProtocolResponseResult implements Serializable {
 
     @JsonProperty
     private String message;

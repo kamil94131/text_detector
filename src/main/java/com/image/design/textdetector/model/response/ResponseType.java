@@ -1,6 +1,8 @@
 package com.image.design.textdetector.model.response;
 
-public enum ResponseType {
+import java.io.Serializable;
+
+public enum ResponseType implements Serializable {
     SUCCESS,
     WARNING,
     DANGER

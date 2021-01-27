@@ -25,7 +25,7 @@ public class FileStoreController {
         this.messageResource = messageResource;
     }
 
-    @GetMapping("{fileName}")
+    @GetMapping(value = "{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Resource> downloadImage(@PathVariable String fileName) {
         final Resource resource = this.fileStoreService.getStoredFile(fileName);
         return ResponseEntity.ok()
@@ -51,14 +51,14 @@ public class FileStoreController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("{fileName}")
+    @DeleteMapping(value = "{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseResult> deleteImage(@PathVariable String fileName) {
         this.fileStoreService.deleteStoredFile(fileName);
         final String message = this.messageResource.get("imagedesign.success.file.deleted");
         return ResponseEntity.ok(new ResponseResult(message, ResponseType.SUCCESS));
     }
 
-    @DeleteMapping()
+    @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseResult> deleteImages() {
         this.fileStoreService.deleteStoredFiles();
         final String message = this.messageResource.get("imagedesign.success.files.deleted");
