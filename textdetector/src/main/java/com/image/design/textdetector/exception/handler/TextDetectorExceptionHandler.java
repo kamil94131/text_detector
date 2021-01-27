@@ -20,6 +20,6 @@ public class TextDetectorExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(value = { BaseException.class })
     public ResponseEntity<ResponseResult> handle(final BaseException ex) {
         LOGGER.warning(String.format("App thrown exception: %s", ex.toString()));
-        return ResponseEntity.status(ex.getHttpStatus()).body(new ResponseResult(ex.getMessage(), ResponseType.ERROR));
+        return ResponseEntity.status(ex.getHttpStatus()).body(new ResponseResult(ex.getMessage(), ResponseType.DANGER));
     }
 }
