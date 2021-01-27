@@ -2,12 +2,7 @@ package com.image.design.textdetector.service;
 
 import com.image.design.textdetector.configuration.FileStorageProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Objects;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Service
 public class FilePathService {
@@ -19,33 +14,24 @@ public class FilePathService {
     }
 
     public String getFullPathUrl(final String fileName) {
-        final HttpServletRequest request = getRequest();
-
-        if(Objects.isNull(request)) {
-            return "";
-        }
-
-        final String context = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+        final String context = this.getContextPath();
         return String.format("%s/%s/%s", context, this.fileStorageProperty.getUploadDirectory(), fileName);
     }
 
     public String getDirectoryPathUrl() {
-        final HttpServletRequest request = getRequest();
-
-        if(Objects.isNull(request)) {
-            return "";
-        }
-        final String context = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+        final String context = this.getContextPath();
         return String.format("%s/%s", context, this.fileStorageProperty.getUploadDirectory());
     }
 
-    private HttpServletRequest getRequest() {
-        final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+    private String getContextPath() {
+        return getUriPath().replace(getOriginalPath(), "");
+    }
 
-        if(Objects.isNull(attributes)) {
-            return null;
-        }
+    private String getUriPath() {
+        return ServletUriComponentsBuilder.fromCurrentRequest().toUriString();
+    }
 
-        return ((ServletRequestAttributes) attributes).getRequest();
+    private String getOriginalPath() {
+        return ServletUriComponentsBuilder.fromCurrentRequest().build().getPath();
     }
 }
