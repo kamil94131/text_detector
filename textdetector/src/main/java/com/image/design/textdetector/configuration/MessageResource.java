@@ -17,10 +17,6 @@ public class MessageResource {
     private final MessageSource messageSource;
 
     public String get(final String resource, final String... params) {
-        return this.get(resource, LocaleContextHolder.getLocale(), params);
-    }
-
-    public String getForSystem(final String resource, final String... params) {
         return this.get(resource, Locale.US, params);
     }
 

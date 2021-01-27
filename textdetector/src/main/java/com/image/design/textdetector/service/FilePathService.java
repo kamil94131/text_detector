@@ -1,5 +1,6 @@
 package com.image.design.textdetector.service;
 
+import com.image.design.textdetector.configuration.FileStorageProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -11,6 +12,12 @@ import java.util.Objects;
 @Service
 public class FilePathService {
 
+    private FileStorageProperty fileStorageProperty;
+
+    public FilePathService(FileStorageProperty fileStorageProperty) {
+        this.fileStorageProperty = fileStorageProperty;
+    }
+
     public String getFullPathUrl(final String fileName) {
         final HttpServletRequest request = getRequest();
 
@@ -19,7 +26,7 @@ public class FilePathService {
         }
 
         final String context = request.getRequestURL().toString().replace(request.getRequestURI(), "");
-        return String.format("%s/store/images/%s", context, fileName);
+        return String.format("%s/%s/%s", context, this.fileStorageProperty.getUploadDirectory(), fileName);
     }
 
     public String getDirectoryPathUrl() {
@@ -29,11 +36,12 @@ public class FilePathService {
             return "";
         }
         final String context = request.getRequestURL().toString().replace(request.getRequestURI(), "");
-        return String.format("%s/store/images", context);
+        return String.format("%s/%s", context, this.fileStorageProperty.getUploadDirectory());
     }
 
     private HttpServletRequest getRequest() {
         final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+
         if(Objects.isNull(attributes)) {
             return null;
         }

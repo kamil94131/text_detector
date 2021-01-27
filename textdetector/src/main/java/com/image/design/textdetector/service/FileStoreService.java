@@ -4,10 +4,11 @@ import com.image.design.textdetector.configuration.FileStorageProperty;
 import com.image.design.textdetector.configuration.MessageResource;
 import com.image.design.textdetector.exception.BaseException;
 import com.image.design.textdetector.model.file.FileExtension;
-import com.image.design.textdetector.model.link.FileUrl;
+import com.image.design.textdetector.model.protocol.StoreResult;
 import org.apache.commons.io.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,9 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,33 +43,30 @@ public class FileStoreService {
         try {
             Files.createDirectories(this.fileStorageProperty.getPath());
         } catch (IOException e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.create.directory", e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.create.directory", e.toString()));
         }
     }
 
-    public Path storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
+    public StoreResult storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
         try {
             final Pattern pattern = Pattern.compile(DETECTED_CODE_PATTERN);
             final Matcher matcher = pattern.matcher(fileName);
 
             if(!matcher.matches()) {
-                LOGGER.warning(this.messageResource.getForSystem("system.error.wrong.code.format", fileName, DETECTED_CODE_PATTERN));
-                return null;
+                return new StoreResult(this.messageResource.get("imagedesign.error.wrong.code.format", fileName, DETECTED_CODE_PATTERN), null);
             }
 
             final Path path = this.generatePath(fileName, fileExtension.name().toLowerCase());
 
             if(Objects.isNull(path)) {
-                LOGGER.warning(this.messageResource.getForSystem("system.error.file.uniquename"));
-                return null;
+                return new StoreResult(this.messageResource.get("system.error.file.uniquename"), null);
             }
 
             Files.copy(multipartFile.getInputStream(), path);
 
-            return path;
+            return new StoreResult(null, path);
         } catch (IOException e) {
-            LOGGER.warning(String.format("Couldn't get file as resource, ex: %s", e.toString()));
-            return null;
+            return new StoreResult(this.messageResource.get("imagedesign.error.cannot.get.file"), null);
         }
     }
 
@@ -92,21 +88,22 @@ public class FileStoreService {
         return this.getPath(String.format("%s-%d", fileName, index), extension);
     }
 
-    public FileUrl getUrlsToStoredFiles() {
+    public List<String> getUrlsToStoredFiles() {
         final File filesDirectory = new File(this.fileStorageProperty.getUploadDirectory());
         if(filesDirectory.exists() && filesDirectory.isDirectory()) {
-            final String filesNames[] = filesDirectory.list();
+            final String[] filesNames = filesDirectory.list();
 
             if(Objects.isNull(filesNames) || filesNames.length == 0) {
-                return new FileUrl();
+                return new ArrayList<>();
             }
 
             final String directoryPathUrl = this.filePathService.getDirectoryPathUrl();
-            final FileUrl fileUrl = new FileUrl();
-            Arrays.stream(filesNames).forEach(fileName -> fileUrl.addUrl(String.format("%s/%s", directoryPathUrl, fileName)));
-            return fileUrl;
+
+            return Arrays.stream(filesNames)
+                    .map(fileName -> String.format("%s/%s", directoryPathUrl, fileName))
+                    .collect(Collectors.toList());
         } else {
-            throw new BaseException(this.messageResource.get("imagedesign.error.directory.notfound"));
+            throw new BaseException(this.messageResource.get("imagedesign.error.directory.notfound"), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -116,11 +113,10 @@ public class FileStoreService {
             try {
                 FileUtils.cleanDirectory(filesDirectory);
             } catch (IOException e) {
-                LOGGER.warning(this.messageResource.getForSystem("system.error.directory.notfound", e.toString()));
-                throw new BaseException(this.messageResource.get("imagedesign.error.directory.notfound"));
+                throw new BaseException(this.messageResource.get("imagedesign.error.directory.cannot.clean"), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            throw new BaseException(this.messageResource.get("imagedesign.error.directory.notfound"));
+            throw new BaseException(this.messageResource.get("imagedesign.error.directory.notfound"), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -132,11 +128,11 @@ public class FileStoreService {
                 final File storedFile = resource.getFile();
                 storedFile.delete();
             } catch (IOException e) {
-                LOGGER.warning(this.messageResource.getForSystem("system.error.cannot.delete.file", e.toString()));
-                throw new BaseException(this.messageResource.get("imagedesign.error.cannot.delete.file"));
+                LOGGER.warning(this.messageResource.get("system.error.cannot.delete.file", e.toString()));
+                throw new BaseException(this.messageResource.get("imagedesign.error.cannot.delete.file"), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            throw new BaseException(this.messageResource.get("imagedesign.error.cannot.delete.file"));
+            throw new BaseException(this.messageResource.get("imagedesign.error.cannot.delete.file"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -144,19 +140,19 @@ public class FileStoreService {
         final Path path = this.getPath(fileName);
 
         if(Objects.isNull(path)) {
-            throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"));
+            throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"), HttpStatus.NOT_FOUND);
         }
 
         try {
             final Resource resource = new UrlResource(path.toUri());
 
             if(!resource.exists()) {
-                throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"));
+                throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"), HttpStatus.NOT_FOUND);
             }
 
             return resource;
         } catch (MalformedURLException e) {
-            throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"));
+            throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

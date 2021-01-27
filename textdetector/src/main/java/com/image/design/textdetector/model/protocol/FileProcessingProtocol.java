@@ -22,14 +22,5 @@ public class FileProcessingProtocol {
     private String code;
 
     @JsonProperty
-    private List<Detail> details = new ArrayList<>();
-
-
-    public void add(final Detail detail) {
-        if(Objects.isNull(detail)) {
-            return;
-        }
-
-        this.details.add(detail);
-    }
+    private String detail;
 }

@@ -1,5 +1,6 @@
 package com.image.design.textdetector.model.protocol;
 
+import com.image.design.textdetector.model.response.ProtocolResponseResult;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.annotation.Scope;
@@ -13,5 +14,5 @@ import org.springframework.web.context.WebApplicationContext;
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class ProcessingProtocol {
 
-    private ProtocolWrapper protocolWrapper = new ProtocolWrapper();
+    private ProtocolResponseResult protocolResponseResult = new ProtocolResponseResult();
 }

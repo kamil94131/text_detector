@@ -1,23 +1,29 @@
 package com.image.design.textdetector.controller;
 
-import com.image.design.textdetector.model.link.FileUrl;
+import com.image.design.textdetector.configuration.MessageResource;
+import com.image.design.textdetector.model.response.FileUrlResponseResult;
+import com.image.design.textdetector.model.response.ResponseResult;
+import com.image.design.textdetector.model.response.ResponseType;
 import com.image.design.textdetector.service.FileStoreService;
-import lombok.AllArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.logging.Logger;
+import java.util.List;
 
 @RestController
 @RequestMapping("store/images")
-@AllArgsConstructor
 public class FileStoreController {
 
-    private static final Logger LOGGER = Logger.getLogger(FileStoreController.class.getName());
     private final FileStoreService fileStoreService;
+    private final MessageResource messageResource;
+
+    public FileStoreController(FileStoreService fileStoreService, MessageResource messageResource) {
+        this.fileStoreService = fileStoreService;
+        this.messageResource = messageResource;
+    }
 
     @GetMapping("{fileName}")
     public ResponseEntity<Resource> downloadImage(@PathVariable String fileName) {
@@ -29,20 +35,33 @@ public class FileStoreController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<FileUrl> getImagesUrls() {
-        final FileUrl fileUrls = this.fileStoreService.getUrlsToStoredFiles();
-        return ResponseEntity.ok().body(fileUrls);
+    public ResponseEntity<FileUrlResponseResult> getImagesUrls() {
+        final List<String> urls = this.fileStoreService.getUrlsToStoredFiles();
+
+        final FileUrlResponseResult result = new FileUrlResponseResult();
+
+        if(!urls.isEmpty()) {
+            result.setType(ResponseType.SUCCESS);
+            result.addUrls(urls);
+            result.setMessage(this.messageResource.get("imagedesign.success.image.found.url"));
+        } else {
+            result.setType(ResponseType.WARNING);
+            result.setMessage(this.messageResource.get("imagedesign.warning.image.notfound.urls"));
+        }
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("{fileName}")
-    public ResponseEntity<String> deleteImage(@PathVariable String fileName) {
+    public ResponseEntity<ResponseResult> deleteImage(@PathVariable String fileName) {
         this.fileStoreService.deleteStoredFile(fileName);
-        return ResponseEntity.ok().build();
+        final String message = this.messageResource.get("imagedesign.success.file.deleted");
+        return ResponseEntity.ok(new ResponseResult(message, ResponseType.SUCCESS));
     }
 
     @DeleteMapping()
-    public ResponseEntity<String> deleteImages() {
+    public ResponseEntity<ResponseResult> deleteImages() {
         this.fileStoreService.deleteStoredFiles();
-        return ResponseEntity.ok().build();
+        final String message = this.messageResource.get("imagedesign.success.files.deleted");
+        return ResponseEntity.ok(new ResponseResult(message, ResponseType.SUCCESS));
     }
 }

@@ -4,12 +4,11 @@ import com.image.design.textdetector.configuration.MessageResource;
 import com.image.design.textdetector.model.detector.TextAreaDetector;
 import com.image.design.textdetector.model.detector.TextDetector;
 import com.image.design.textdetector.model.file.FileExtension;
-import com.image.design.textdetector.model.protocol.Detail;
+import com.image.design.textdetector.model.protocol.StoreResult;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
 @Service
@@ -48,7 +47,7 @@ public class DetectionProcessService {
         final byte[] imageWithProperOrientation = this.fileHandlerService.getImageWithProperOrientation(multipartFile, fileExtension);
 
         if(imageWithProperOrientation.length == 0) {
-            this.appendToProtocol("imagedesign.error.file.unknown.problem");
+            this.appendResourceToProtocol("imagedesign.error.file.unknown.problem");
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return "";
         }
@@ -56,13 +55,13 @@ public class DetectionProcessService {
         final byte[] detectedCodeAreaImage = this.textAreaDetector.detect(imageWithProperOrientation, fileExtension);
 
         if(detectedCodeAreaImage.length == 0) {
-            this.appendToProtocol("imagedesign.error.file.unknown.problem");
+            this.appendResourceToProtocol("imagedesign.error.file.unknown.problem");
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return "";
         }
 
         if(imageWithProperOrientation == detectedCodeAreaImage) {
-            this.appendToProtocol("imagedesign.error.code.are.notfound");
+            this.appendResourceToProtocol("imagedesign.error.code.are.notfound");
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return "";
         }
@@ -70,7 +69,7 @@ public class DetectionProcessService {
         final String detectedCode = this.textDetector.detect(detectedCodeAreaImage);
 
         if(detectedCode.isBlank()) {
-            this.appendToProtocol("imagedesign.error.ocr");
+            this.appendResourceToProtocol("imagedesign.error.ocr");
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return "";
         }
@@ -79,20 +78,20 @@ public class DetectionProcessService {
     }
 
     private void store(final MultipartFile multipartFile, final String detectedCode, final FileExtension fileExtension) {
-        final Path path = this.fileStoreService.storeFile(multipartFile, detectedCode, fileExtension);
+        final StoreResult storeResult = this.fileStoreService.storeFile(multipartFile, detectedCode, fileExtension);
 
-        if(Objects.isNull(path)) {
-            this.appendToProtocol("imagedesign.error.imagestore.save");
+        if(Objects.isNull(storeResult.getPath())) {
+            this.appendToProtocol(storeResult.getMessage());
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return;
         }
 
-        final String serverPath = path.toString();
+        final String serverPath = storeResult.getPath().toString();
         final String fileName = serverPath.substring(serverPath.lastIndexOf("\\") + 1);
         final String resourcePath = this.filePathService.getFullPathUrl(fileName);
 
         if(Objects.isNull(resourcePath)) {
-            this.appendToProtocol("imagedesign.error.imagestore.save");
+            this.appendResourceToProtocol("imagedesign.error.imagestore.save");
             this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
             return;
         }
@@ -101,12 +100,16 @@ public class DetectionProcessService {
 
     private void appendExtensionNotAllowedToProtocol() {
         final String availableExtensions = FileExtension.getFormattedExtensions();
-        final Detail detail = new Detail(this.messageResource.get("imagedesign.error.file.extension", availableExtensions));
-        this.protocolService.addMessage(detail);
+        final String detail = this.messageResource.get("imagedesign.error.file.extension", availableExtensions);
+        this.protocolService.setMessage(detail);
     }
 
-    private void appendToProtocol(final String resource) {
-        final Detail detail = new Detail(this.messageResource.get(resource));
-        this.protocolService.addMessage(detail);
+    private void appendResourceToProtocol(final String resource) {
+        final String detail = this.messageResource.get(resource);
+        this.protocolService.setMessage(detail);
+    }
+
+    private void appendToProtocol(final String detail) {
+        this.protocolService.setMessage(detail);
     }
 }

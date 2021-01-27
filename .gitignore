@@ -1,5 +1,5 @@
 /.idea/
 /textdetector/target/classes/
 /textdetector/textdetector.iml
-/file_uploads/
 /logs/
+/textdetector/src/main/resources/public/images/

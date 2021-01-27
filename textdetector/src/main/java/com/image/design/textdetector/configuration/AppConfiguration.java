@@ -3,17 +3,13 @@ package com.image.design.textdetector.configuration;
 import net.sourceforge.tess4j.Tesseract;
 import org.opencv.dnn.Dnn;
 import org.opencv.dnn.Net;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,16 +20,26 @@ public class AppConfiguration {
 
     private static final Logger LOGGER = Logger.getLogger(AppConfiguration.class.getName());
     private static final String LANG_PARAM = "lang";
-    private static final String MASSAGES_CLASSPATH = "classpath:i18n/messages";
     private static final String ENCODING = "UTF-8";
 
     @Value("${tesseract.default.language}")
-    private String tesseractDefaultLanguage;
+    private String tesseractLang;
+
+    @Value("${messages.path}")
+    private String messagesPath;
+
+    @Value("${tesseract.file.path}")
+    private String tesseractFilePath;
+
+    @Value("${tesseract.directory.path}")
+    private String tesseractDirectoryPath;
+
+    @Value("${tesseract.segmentation.mode}")
+    private int tesseractSegmentationMode;
 
     @Bean
-    @Qualifier("frozenEastNeuralNetwork")
     public Net frozeEastNN(final ResourceLoader resourceLoader) {
-        final Resource neuralNetworkResource = resourceLoader.getResource("classpath:opencv\\frozen_east_text_detection.pb");
+        final Resource neuralNetworkResource = resourceLoader.getResource(this.tesseractFilePath);
         final String neuralNetworkPath = getFrozenEastNeuralNetworkPath(neuralNetworkResource);
         return Dnn.readNetFromTensorflow(neuralNetworkPath);
     }
@@ -55,17 +61,10 @@ public class AppConfiguration {
     @Bean
     public Tesseract tesseract(final ResourceLoader resourceLoader) throws IOException {
         final Tesseract tesseract = new Tesseract();
-        tesseract.setLanguage(this.tesseractDefaultLanguage);
-        tesseract.setPageSegMode(8);
-        tesseract.setDatapath(resourceLoader.getResource("classpath:tesseract\\").getFile().getPath());
+        tesseract.setLanguage(this.tesseractLang);
+        tesseract.setPageSegMode(this.tesseractSegmentationMode);
+        tesseract.setDatapath(resourceLoader.getResource(this.tesseractDirectoryPath).getFile().getPath());
         return tesseract;
-    }
-
-    @Bean
-    public LocaleResolver localeResolver() {
-        final SessionLocaleResolver sessionLocaleResolver = new SessionLocaleResolver();
-        sessionLocaleResolver.setDefaultLocale(LocaleContextHolder.getLocale());
-        return sessionLocaleResolver;
     }
 
     @Bean
@@ -78,7 +77,7 @@ public class AppConfiguration {
     @Bean
     public ReloadableResourceBundleMessageSource messageSource() {
         final ReloadableResourceBundleMessageSource bundleMessageSource = new ReloadableResourceBundleMessageSource();
-        bundleMessageSource.setBasename(MASSAGES_CLASSPATH);
+        bundleMessageSource.setBasename(this.messagesPath);
         bundleMessageSource.setDefaultEncoding(ENCODING);
         return bundleMessageSource;
     }

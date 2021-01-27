@@ -24,7 +24,7 @@ public class TextDetector {
             final BufferedImage image = this.conversionService.convertBytesToImage(data);
             return tesseract.doOCR(image).replace(' ', '_').trim();
         } catch(Exception e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.ocr", e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.ocr", e.toString()));
             return "";
         }
     }

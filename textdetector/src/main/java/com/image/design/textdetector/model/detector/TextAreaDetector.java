@@ -8,7 +8,6 @@ import org.opencv.dnn.Net;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,7 @@ public class TextAreaDetector {
     private final Net frozenEastNeuralNetwork;
     private final MessageResource messageResource;
 
-    public TextAreaDetector(@Qualifier("frozenEastNeuralNetwork") final Net frozenEastNeuralNetwork, final MessageResource messageResource) {
+    public TextAreaDetector(final Net frozenEastNeuralNetwork, final MessageResource messageResource) {
         this.frozenEastNeuralNetwork = frozenEastNeuralNetwork;
         this.messageResource = messageResource;
     }
@@ -93,7 +92,7 @@ public class TextAreaDetector {
 
             return matByte.toArray();
         } catch(Exception e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.opencv.unknown.problem", e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.opencv.unknown.problem", e.toString()));
             return new byte[0];
         }
     }

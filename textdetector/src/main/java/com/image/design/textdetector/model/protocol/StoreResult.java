@@ -1,15 +1,16 @@
 package com.image.design.textdetector.model.protocol;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@AllArgsConstructor
+import java.nio.file.Path;
+
 @Getter
 @Setter
-public class Detail {
+@AllArgsConstructor
+public class StoreResult {
 
-    @JsonProperty
-    private String description;
+    private String message;
+    private Path path;
 }

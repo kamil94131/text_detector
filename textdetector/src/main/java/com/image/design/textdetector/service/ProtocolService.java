@@ -1,7 +1,6 @@
 package com.image.design.textdetector.service;
 
 import com.image.design.textdetector.model.protocol.FileProcessingProtocol;
-import com.image.design.textdetector.model.protocol.Detail;
 import com.image.design.textdetector.model.protocol.ProcessingProtocol;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +15,12 @@ public class ProtocolService {
 
     public void beginGeneration() {
         final FileProcessingProtocol protocol = new FileProcessingProtocol();
-        this.processingProtocol.getProtocolWrapper().add(protocol);
+        this.processingProtocol.getProtocolResponseResult().add(protocol);
     }
 
-    public void addMessage(final Detail detail) {
+    public void setMessage(final String detail) {
         final FileProcessingProtocol fileProcessingProtocol = this.getCurrentFileProcessingProtocol();
-        fileProcessingProtocol.add(detail);
+        fileProcessingProtocol.setDetail(detail);
     }
 
     public ProcessingProtocol getProtocol() {
@@ -29,7 +28,7 @@ public class ProtocolService {
     }
 
     private FileProcessingProtocol getCurrentFileProcessingProtocol() {
-        return this.processingProtocol.getProtocolWrapper().getProtocol().stream()
+        return this.processingProtocol.getProtocolResponseResult().getProtocol().stream()
                 .reduce((previous, next) -> next)
                 .orElse(new FileProcessingProtocol());
     }
@@ -42,6 +41,6 @@ public class ProtocolService {
     }
 
     public void finishGeneration(final String fileName) {
-        this.finishGeneration("", "", fileName);
+        this.finishGeneration(null, null, fileName);
     }
 }

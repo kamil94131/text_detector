@@ -46,7 +46,7 @@ public class FileHandlerService {
             final String originalFileName = multipartFile.getOriginalFilename();
             return FilenameUtils.getExtension(originalFileName);
         } catch (IllegalArgumentException e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.file.extension", multipartFile.getOriginalFilename(), e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.file.extension", multipartFile.getOriginalFilename(), e.toString()));
             return "";
         }
     }
@@ -98,7 +98,7 @@ public class FileHandlerService {
         try {
             return file.getBytes();
         } catch (IOException e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.inputfile.read", e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.inputfile.read", e.toString()));
             return new byte[0];
         }
     }
@@ -112,7 +112,7 @@ public class FileHandlerService {
             final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
             return ImageIO.read(inputStream);
         } catch (IOException e) {
-            LOGGER.warning(this.messageResource.getForSystem("system.error.image.conversion", e.toString()));
+            LOGGER.warning(this.messageResource.get("system.error.image.conversion", e.toString()));
             return null;
         }
     }
