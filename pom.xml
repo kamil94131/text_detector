@@ -18,6 +18,8 @@
 		<java.version>15</java.version>
 	</properties>
 
+	<packaging>war</packaging>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.openpnp</groupId>
