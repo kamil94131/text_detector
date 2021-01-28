@@ -11,7 +11,6 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 public class TextDetectorApplication extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
-		OpenCV.loadLocally();
 		SpringApplication.run(TextDetectorApplication.class, args);
 	}
 }

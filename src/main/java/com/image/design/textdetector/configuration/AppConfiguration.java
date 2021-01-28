@@ -1,6 +1,7 @@
 package com.image.design.textdetector.configuration;
 
 import net.sourceforge.tess4j.Tesseract;
+import nu.pattern.OpenCV;
 import org.opencv.dnn.Dnn;
 import org.opencv.dnn.Net;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,10 @@ public class AppConfiguration {
     private static final Logger LOGGER = Logger.getLogger(AppConfiguration.class.getName());
     private static final String LANG_PARAM = "lang";
     private static final String ENCODING = "UTF-8";
+
+    public AppConfiguration() {
+        OpenCV.loadLocally();
+    }
 
     @Value("${tesseract.default.language}")
     private String tesseractLang;
