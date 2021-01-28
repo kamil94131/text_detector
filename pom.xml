@@ -14,6 +14,10 @@
 	<name>textdetector</name>
 	<description>Spring boot app for text detection</description>
 
+	<properties>
+		<java.version>15</java.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.openpnp</groupId>
