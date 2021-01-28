@@ -15,16 +15,14 @@
 	<description>Spring boot app for text detection</description>
 
 	<properties>
-		<java.version>15</java.version>
+		<java.version>11</java.version>
 	</properties>
-
-	<packaging>war</packaging>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.openpnp</groupId>
 			<artifactId>opencv</artifactId>
-			<version>4.3.0-0</version>
+			<version>4.3.0-3</version>
 		</dependency>
 		<dependency>
 			<groupId>net.sourceforge.tess4j</groupId>

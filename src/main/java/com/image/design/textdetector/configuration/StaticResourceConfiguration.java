@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class StaticResourceConfiguration implements WebMvcConfigurer {
 
     private static final String CLASSPATH_RESOURCE_LOCATIONS = "file:public/images/";
-    private static final String DEFAULT_SERVLET_NAME = "dispatcherServlet";
+    private static final String DEFAULT_SERVLET_NAME = "newDispatcherServlet";
     private static final String RESOURCE_HANDLER_PATH = "public/images/**";
 
     private final ResourceLoader resourceLoader;
