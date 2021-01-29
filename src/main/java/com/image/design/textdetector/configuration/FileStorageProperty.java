@@ -15,7 +15,9 @@ import java.util.logging.Logger;
 public class FileStorageProperty {
 
     private static final Logger LOGGER = Logger.getLogger(FileStorageProperty.class.getName());
+
     private String uploadDirectory;
+    private String context;
 
     public Path getPath() {
         try {
@@ -24,5 +26,9 @@ public class FileStorageProperty {
             LOGGER.warning(String.format("Couldn't get file store path, ex: %s", e.toString()));
             return null;
         }
+    }
+
+    public String getContextWithUploadDirectory() {
+        return String.format("%s/%s", this.context, this.uploadDirectory);
     }
 }

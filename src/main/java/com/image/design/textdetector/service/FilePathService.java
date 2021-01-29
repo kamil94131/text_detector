@@ -7,7 +7,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Service
 public class FilePathService {
 
-    private FileStorageProperty fileStorageProperty;
+    private final FileStorageProperty fileStorageProperty;
 
     public FilePathService(FileStorageProperty fileStorageProperty) {
         this.fileStorageProperty = fileStorageProperty;
@@ -15,12 +15,12 @@ public class FilePathService {
 
     public String getFullPathUrl(final String fileName) {
         final String context = this.getContextPath();
-        return String.format("%s/%s/%s", context, this.fileStorageProperty.getUploadDirectory(), fileName);
+        return String.format("%s/%s/%s", context, this.fileStorageProperty.getContextWithUploadDirectory(), fileName);
     }
 
     public String getDirectoryPathUrl() {
         final String context = this.getContextPath();
-        return String.format("%s/%s", context, this.fileStorageProperty.getUploadDirectory());
+        return String.format("%s/%s", context, this.fileStorageProperty.getContextWithUploadDirectory());
     }
 
     private String getContextPath() {
