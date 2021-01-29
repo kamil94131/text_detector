@@ -87,7 +87,7 @@ public class DetectionProcessService {
         }
 
         final String serverPath = storeResult.getPath().toString();
-        final String fileName = serverPath.substring(serverPath.lastIndexOf("\\") + 1);
+        final String fileName = serverPath.substring(serverPath.lastIndexOf("/") + 1);
         final String resourcePath = this.filePathService.getFullPathUrl(fileName);
 
         if(Objects.isNull(resourcePath)) {
