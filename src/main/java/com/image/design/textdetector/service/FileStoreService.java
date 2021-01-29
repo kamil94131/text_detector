@@ -172,7 +172,7 @@ public class FileStoreService {
 
     private Path getPath(final String fileName) {
         try {
-            return Paths.get(String.format("%s\\%s", this.fileStorageProperty.getUploadDirectory(), fileName));
+            return Paths.get(String.format("%s/%s", this.fileStorageProperty.getUploadDirectory(), fileName));
         } catch(InvalidPathException e) {
             LOGGER.warning(String.format("Couldn't get path for file name: %s, ex: %s", fileName, e.toString()));
             return null;
