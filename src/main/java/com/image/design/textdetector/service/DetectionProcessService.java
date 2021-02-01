@@ -4,11 +4,13 @@ import com.image.design.textdetector.configuration.MessageResource;
 import com.image.design.textdetector.model.detector.TextAreaDetector;
 import com.image.design.textdetector.model.detector.TextDetector;
 import com.image.design.textdetector.model.file.FileExtension;
+import com.image.design.textdetector.model.protocol.CodeResult;
 import com.image.design.textdetector.model.protocol.StoreResult;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.Objects;
 
 @Service
@@ -21,7 +23,8 @@ public class DetectionProcessService {
     private final FileHandlerService fileHandlerService;
     private final MessageResource messageResource;
     private final FileStoreService fileStoreService;
-    private final FilePathService filePathService;
+    private final ApiFilePathService apiFilePathService;
+    private final CodeService codeService;
 
     public void process(final MultipartFile multipartFile) {
         this.protocolService.beginGeneration();
@@ -40,7 +43,25 @@ public class DetectionProcessService {
             return;
         }
 
-        this.store(multipartFile, detectedCode, fileExtension);
+        final String convertedDetectedCode = getConvertedCode(detectedCode, multipartFile);
+
+        if(convertedDetectedCode.isBlank()) {
+            return;
+        }
+
+        this.store(multipartFile, convertedDetectedCode, fileExtension);
+    }
+
+    private String getConvertedCode(final String detectedCode, final MultipartFile multipartFile) {
+        final CodeResult codeResult = this.codeService.convert(detectedCode);
+
+        if(Objects.nonNull(codeResult.getMessage()) && !codeResult.getMessage().isBlank()) {
+            this.appendToProtocol(codeResult.getMessage());
+            this.protocolService.finishGeneration(multipartFile.getOriginalFilename());
+            return "";
+        }
+
+        return codeResult.getConvertedCode();
     }
 
     private String detect(final MultipartFile multipartFile, final FileExtension fileExtension) {
@@ -87,8 +108,8 @@ public class DetectionProcessService {
         }
 
         final String serverPath = storeResult.getPath().toString();
-        final String fileName = serverPath.substring(serverPath.lastIndexOf("/") + 1);
-        final String resourcePath = this.filePathService.getFullPathUrl(fileName);
+        final String fileName = serverPath.substring(serverPath.lastIndexOf(File.separator) + 1);
+        final String resourcePath = this.apiFilePathService.getFullPathUrl(fileName);
 
         if(Objects.isNull(resourcePath)) {
             this.appendResourceToProtocol("imagedesign.error.imagestore.save");

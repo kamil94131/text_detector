@@ -46,7 +46,7 @@ public class TextAreaDetector {
             final List<Mat> outs = new ArrayList<>(2);
 
             int H = (int)(size.height / 4);
-            Mat blob = Dnn.blobFromImage(frame, 1.0,size, new Scalar(600.00, 300.00, 300.00), true, false);
+            Mat blob = Dnn.blobFromImage(frame, 1.0,size, new Scalar(255, 0, 255), true, false);
             net.setInput(blob);
             net.forward(outs, getOutputNNLayerNames());
 
@@ -122,12 +122,12 @@ public class TextAreaDetector {
                     double x1 = x1Data.get(0, x)[0];
                     double x2 = x2Data.get(0, x)[0];
                     double x3 = x3Data.get(0, x)[0];
-                    double h = x0 + x2 + 5.0f;
-                    double w = x1 + x3 + 3.0f;
+                    double h = x0 + x2;
+                    double w = x1 + x3;
                     Point offset = new Point(offsetX + cosA * x1 + sinA * x2, offsetY - sinA * x1 + cosA * x2);
-                    Point p1 = new Point(-1 * sinA * h + offset.x, -1 * cosA * h + offset.y + 5.0f);
-                    Point p3 = new Point(-1 * cosA * w + offset.x + 5.0f,      sinA * w + offset.y + 5.0f); // original trouble here !
-                    RotatedRect r = new RotatedRect(new Point(0.5 * (p1.x + p3.x), 0.5 * (p1.y + p3.y)), new Size(w + 5, h + 5), -0.1 * angle * 180 / Math.PI);
+                    Point p1 = new Point(-1 * sinA * h + offset.x, -1 * cosA * h + offset.y);
+                    Point p3 = new Point(-1 * cosA * w + offset.x,      sinA * w + offset.y); // original trouble here !
+                    RotatedRect r = new RotatedRect(new Point(0.5 * (p1.x + p3.x), 0.5 * (p1.y + p3.y)), new Size(w + 10, h + 10), -0.5 * angle * 180 / Math.PI);
                     detections.add(r);
                     confidences.add((float) score);
                 }

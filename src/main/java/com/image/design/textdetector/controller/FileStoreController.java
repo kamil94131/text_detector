@@ -37,7 +37,7 @@ public class FileStoreController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<FileUrlResponseResult> getImagesUrls() {
-        final List<String> urls = this.fileStoreService.getUrlsToStoredFiles();
+        final List<String> urls = this.fileStoreService.getApiUrlsToStoredFiles();
 
         final FileUrlResponseResult result = new FileUrlResponseResult();
 

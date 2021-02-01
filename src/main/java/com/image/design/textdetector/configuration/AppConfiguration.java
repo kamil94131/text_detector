@@ -68,6 +68,7 @@ public class AppConfiguration {
         final Tesseract tesseract = new Tesseract();
         tesseract.setLanguage(this.tesseractLang);
         tesseract.setPageSegMode(this.tesseractSegmentationMode);
+        tesseract.setTessVariable("user_defined_dpi", "300");
         tesseract.setDatapath(resourceLoader.getResource(this.tesseractDirectoryPath).getFile().getPath());
         return tesseract;
     }

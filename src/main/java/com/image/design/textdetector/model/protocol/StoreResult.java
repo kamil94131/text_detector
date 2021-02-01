@@ -10,7 +10,6 @@ import java.nio.file.Path;
 @Setter
 @AllArgsConstructor
 public class StoreResult {
-
     private String message;
     private Path path;
 }

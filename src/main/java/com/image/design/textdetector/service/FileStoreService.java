@@ -6,6 +6,7 @@ import com.image.design.textdetector.exception.BaseException;
 import com.image.design.textdetector.model.file.FileExtension;
 import com.image.design.textdetector.model.protocol.StoreResult;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -29,16 +30,19 @@ import java.util.stream.LongStream;
 @Service
 public class FileStoreService {
 
-    private static final String DETECTED_CODE_PATTERN = "^[a-zA-Z0-9_]+$";
     private static final Logger LOGGER = Logger.getLogger(FileStoreService.class.getName());
+
+    @Value("${detectedcode.prefix}")
+    private String detectedCodePrefix;
+
     private final MessageResource messageResource;
     private final FileStorageProperty fileStorageProperty;
-    private final FilePathService filePathService;
+    private final ApiFilePathService apiFilePathService;
 
-    public FileStoreService(final FileStorageProperty fileStorageProperty, final MessageResource messageResource, final FilePathService filePathService) {
+    public FileStoreService(final FileStorageProperty fileStorageProperty, final MessageResource messageResource, final ApiFilePathService apiFilePathService) {
         this.messageResource = messageResource;
         this.fileStorageProperty = fileStorageProperty;
-        this.filePathService = filePathService;
+        this.apiFilePathService = apiFilePathService;
 
         try {
             Files.createDirectories(this.fileStorageProperty.getPath());
@@ -49,14 +53,14 @@ public class FileStoreService {
 
     public StoreResult storeFile(final MultipartFile multipartFile, final String fileName, final FileExtension fileExtension) {
         try {
-            final Pattern pattern = Pattern.compile(DETECTED_CODE_PATTERN);
+            final Pattern pattern = Pattern.compile(String.format("^%s[0-9]{5}$", this.detectedCodePrefix));
             final Matcher matcher = pattern.matcher(fileName);
 
             if(!matcher.matches()) {
-                return new StoreResult(this.messageResource.get("imagedesign.error.wrong.code.format", fileName, DETECTED_CODE_PATTERN), null);
+                return new StoreResult(this.messageResource.get("imagedesign.error.wrong.code.format", fileName), null);
             }
 
-            final Path path = this.generatePath(fileName, fileExtension.name().toLowerCase());
+            final Path path = this.generateSystemPath(fileName, fileExtension.name().toLowerCase());
 
             if(Objects.isNull(path)) {
                 return new StoreResult(this.messageResource.get("system.error.file.uniquename"), null);
@@ -70,8 +74,8 @@ public class FileStoreService {
         }
     }
 
-    private Path generatePath(final String fileName, final String extension) {
-        final Path path = this.getPath(fileName, extension);
+    private Path generateSystemPath(final String fileName, final String extension) {
+        final Path path = this.getSystemPath(fileName, extension);
 
         if(Objects.isNull(path) || !this.fileExists(path)) {
             return path;
@@ -85,10 +89,10 @@ public class FileStoreService {
     }
 
     private Path generateNextFileName(final String fileName, final String extension, final long index) {
-        return this.getPath(String.format("%s-%d", fileName, index), extension);
+        return this.getSystemPath(String.format("%s-%d", fileName, index), extension);
     }
 
-    public List<String> getUrlsToStoredFiles() {
+    public List<String> getApiUrlsToStoredFiles() {
         final File filesDirectory = new File(this.fileStorageProperty.getUploadDirectory());
         if(filesDirectory.exists() && filesDirectory.isDirectory()) {
             final String[] filesNames = filesDirectory.list();
@@ -97,7 +101,7 @@ public class FileStoreService {
                 return new ArrayList<>();
             }
 
-            final String directoryPathUrl = this.filePathService.getDirectoryPathUrl();
+            final String directoryPathUrl = this.apiFilePathService.getDirectoryPathUrl();
 
             return Arrays.stream(filesNames)
                     .map(fileName -> String.format("%s/%s", directoryPathUrl, fileName))
@@ -137,7 +141,7 @@ public class FileStoreService {
     }
 
     public Resource getStoredFile(final String fileName) {
-        final Path path = this.getPath(fileName);
+        final Path path = this.getSystemPath(fileName);
 
         if(Objects.isNull(path)) {
             throw new BaseException(this.messageResource.get("imagedesign.error.imagestore.notfound"), HttpStatus.NOT_FOUND);
@@ -170,17 +174,8 @@ public class FileStoreService {
         }
     }
 
-    private Path getPath(final String fileName) {
-        try {
-            return Paths.get(String.format("%s/%s", this.fileStorageProperty.getUploadDirectory(), fileName));
-        } catch(InvalidPathException e) {
-            LOGGER.warning(String.format("Couldn't get path for file name: %s, ex: %s", fileName, e.toString()));
-            return null;
-        }
-    }
-
-    private Path getPath(final String fileName, final String extension) {
-        final Optional<Path> pathWithFileName = Optional.ofNullable(this.getPath(fileName));
+    private Path getSystemPath(final String fileName, final String extension) {
+        final Optional<Path> pathWithFileName = Optional.ofNullable(this.getSystemPath(fileName));
 
         if(pathWithFileName.isEmpty()) {
             return null;
@@ -190,6 +185,15 @@ public class FileStoreService {
             return Paths.get(String.format("%s.%s", pathWithFileName.get().toString(), extension));
         } catch(InvalidPathException e) {
             LOGGER.warning(String.format("Couldn't get path for file name: %s and extension: %s, ex: %s", fileName, extension, e.toString()));
+            return null;
+        }
+    }
+
+    private Path getSystemPath(final String fileName) {
+        try {
+            return Paths.get(String.format("%s%s%s", this.fileStorageProperty.getUploadDirectory(), File.separator, fileName));
+        } catch(InvalidPathException e) {
+            LOGGER.warning(String.format("Couldn't get path for file name: %s, ex: %s", fileName, e.toString()));
             return null;
         }
     }
